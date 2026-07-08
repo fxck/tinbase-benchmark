@@ -1,0 +1,30 @@
+#zeropsPreprocessor=on
+
+# Small Production — one dedicated-ish container on a SERIOUS core with generous
+# vertical autoscaling and a public subdomain, for a shareable live demo. Still a
+# single container: tinbase's Postgres lives in-process, so horizontal scaling
+# would split the database across containers (see the recipe knowledge base).
+
+project:
+  name: tinbase-benchmark-prod
+  corePackage: SERIOUS
+  tags:
+    - tinbase
+    - benchmark
+    - production
+
+services:
+  - hostname: app
+    type: nodejs@22
+    buildFromGit: https://github.com/fxck/tinbase-benchmark
+    zeropsSetup: app
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 1
+    verticalAutoscaling:
+      minRam: 2
+      maxRam: 16
+      minCpu: 2
+      maxCpu: 8
+    envSecrets:
+      TINBASE_JWT_SECRET: <@generateRandomString(<48>)>

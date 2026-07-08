@@ -1,0 +1,5 @@
+node_modules/
+.tinbase/
+*.log
+.env
+.DS_Store

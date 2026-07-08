@@ -1,0 +1,27 @@
+#zeropsPreprocessor=on
+
+# Stage — a single always-on container with a little more RAM headroom for larger
+# benchmark runs. Still one container (the database is in-process) and still no
+# managed dependencies.
+
+project:
+  name: tinbase-benchmark-stage
+  corePackage: LIGHT
+  tags:
+    - tinbase
+    - benchmark
+    - stage
+
+services:
+  - hostname: app
+    type: nodejs@22
+    buildFromGit: https://github.com/fxck/tinbase-benchmark
+    zeropsSetup: app
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 1
+    verticalAutoscaling:
+      minRam: 1
+      maxRam: 8
+    envSecrets:
+      TINBASE_JWT_SECRET: <@generateRandomString(<48>)>

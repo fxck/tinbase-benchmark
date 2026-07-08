@@ -1,0 +1,27 @@
+#zeropsPreprocessor=on
+
+# Local — a single, light always-on container running the benchmark dashboard and
+# tinbase (Postgres in WASM, in-process). No managed database: tinbase IS the
+# database, so there is nothing else to provision. Cheapest way to try the recipe.
+
+project:
+  name: tinbase-benchmark
+  corePackage: LIGHT
+  tags:
+    - tinbase
+    - benchmark
+    - local
+
+services:
+  - hostname: app
+    type: nodejs@22
+    buildFromGit: https://github.com/fxck/tinbase-benchmark
+    zeropsSetup: app
+    enableSubdomainAccess: true
+    # In-process database → exactly one container. See recipe knowledge base.
+    minContainers: 1
+    maxContainers: 1
+    envSecrets:
+      # tinbase derives the anon / service_role JWTs from this; generated once,
+      # never prompted.
+      TINBASE_JWT_SECRET: <@generateRandomString(<48>)>

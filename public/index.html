@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tinbase · benchmark</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <link rel="stylesheet" href="/assets/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">⚡</span>
+      <div>
+        <h1>tinbase <span class="thin">benchmark</span></h1>
+        <p class="sub">Supabase-compatible Postgres, in one process — hammered over its REST API.</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="statusPill" class="pill pill-wait">booting…</span>
+      <a id="studioLink" class="btn btn-ghost" href="/_/" target="_blank" rel="noopener">Open Studio ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel controls">
+      <div class="field">
+        <label for="workload">Workload</label>
+        <select id="workload"></select>
+      </div>
+      <div class="field">
+        <label for="total">Operations</label>
+        <input id="total" type="number" min="100" max="500000" step="100" value="20000" />
+      </div>
+      <div class="field">
+        <label for="concurrency">Concurrency <span id="concVal" class="mono">32</span></label>
+        <input id="concurrency" type="range" min="1" max="256" step="1" value="32" />
+      </div>
+      <div class="field field-actions">
+        <button id="runBtn" class="btn btn-primary" disabled>Run benchmark</button>
+        <button id="resetBtn" class="btn btn-ghost" disabled title="TRUNCATE the bench table">Reset DB</button>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat stat-hero">
+        <div class="stat-label">Throughput</div>
+        <div class="stat-value"><span id="tp">–</span> <span class="unit">ops/sec</span></div>
+      </div>
+      <div class="stat"><div class="stat-label">p50 latency</div><div class="stat-value"><span id="p50">–</span> <span class="unit">ms</span></div></div>
+      <div class="stat"><div class="stat-label">p95 latency</div><div class="stat-value"><span id="p95">–</span> <span class="unit">ms</span></div></div>
+      <div class="stat"><div class="stat-label">p99 latency</div><div class="stat-value"><span id="p99">–</span> <span class="unit">ms</span></div></div>
+      <div class="stat"><div class="stat-label">Max latency</div><div class="stat-value"><span id="pmax">–</span> <span class="unit">ms</span></div></div>
+    </section>
+
+    <section class="panel chart-panel">
+      <div class="chart-head">
+        <h2>Live throughput</h2>
+        <div class="progress-wrap"><div id="progressBar" class="progress"></div></div>
+        <span id="progressText" class="mono muted">idle</span>
+      </div>
+      <canvas id="chart" height="260"></canvas>
+    </section>
+
+    <div class="two-col">
+      <section class="panel">
+        <h2>Runs</h2>
+        <table class="runs">
+          <thead><tr><th>Workload</th><th>Ops</th><th>Conc.</th><th>ops/sec</th><th>p50</th><th>p99</th></tr></thead>
+          <tbody id="runsBody"><tr class="empty"><td colspan="6">No runs yet — hit “Run benchmark”.</td></tr></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Connection</h2>
+        <p class="muted">The dashboard, the REST API and the Studio all share this origin.</p>
+        <div class="kv"><span>REST base</span><code id="restBase" class="copy">/rest/v1</code></div>
+        <div class="kv"><span>Studio</span><code class="copy">/_/</code></div>
+        <div class="kv"><span>anon key</span><code id="anonKey" class="copy trunc">–</code></div>
+        <pre class="snippet"><code>curl "$ORIGIN/rest/v1/bench?select=*&limit=5" \
+  -H "apikey: $ANON_KEY"</code></pre>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <span>Running on <a href="https://zerops.io" target="_blank" rel="noopener">Zerops</a> · powered by <a href="https://www.tinbase.dev" target="_blank" rel="noopener">tinbase</a></span>
+  </footer>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>
