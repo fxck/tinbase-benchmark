@@ -1,12 +1,12 @@
 #zeropsPreprocessor=on
 
-# Small Production — the three-service stack on a SERIOUS core: one tinbase and one
+# Small Production — the three-service stack with vertically-autoscaled containers: one
 # dashboard container, each vertically autoscaled, plus a single-node managed
 # Postgres. For horizontal scale + a resilient database use the HA Production tier.
 
 project:
   name: tinbase-benchmark-prod
-  corePackage: SERIOUS
+  corePackage: LIGHT
   envVariables:
     TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
 
