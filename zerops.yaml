@@ -1,4 +1,8 @@
 zerops:
+  # Production / always-on setup. tinbase runs against the managed `db` service
+  # via DATABASE_URL (superuser — tinbase creates the anon/authenticated/
+  # service_role roles, which needs CREATEROLE). Ubuntu runtime for parity with
+  # the verified environment.
   - setup: app
     build:
       base: nodejs@22
@@ -10,9 +14,39 @@ zerops:
         - node_modules
     run:
       base: nodejs@22
+      os: ubuntu
       ports:
         - port: 3000
           httpSupport: true
       envVariables:
         NODE_ENV: production
+        # Superuser connection — required for tinbase's role bootstrap.
+        DATABASE_URL: postgresql://${db_superUser}:${db_superUserPassword}@${db_hostname}:${db_port}/${db_dbName}
       start: node server.js
+      healthCheck:
+        httpGet:
+          port: 3000
+          path: /health
+
+  # Dev setup — deploys the whole tree and idles on `zsc noop` so an agent / IDE
+  # can adopt the container and drive `node server.js` via the Zerops dev server.
+  # Used by the "AI Agent" and "Remote (CDE)" recipe environments.
+  - setup: appdev
+    build:
+      base: nodejs@22
+      buildCommands:
+        - npm install
+      deployFiles:
+        - .
+      cache:
+        - node_modules
+    run:
+      base: nodejs@22
+      os: ubuntu
+      ports:
+        - port: 3000
+          httpSupport: true
+      envVariables:
+        NODE_ENV: development
+        DATABASE_URL: postgresql://${db_superUser}:${db_superUserPassword}@${db_hostname}:${db_port}/${db_dbName}
+      start: zsc noop --silent

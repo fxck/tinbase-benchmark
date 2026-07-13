@@ -1,0 +1,31 @@
+#zeropsPreprocessor=on
+
+# Remote CDE — one dev container (zeropsSetup: appdev deploys the tree and idles on
+# `zsc noop`) plus the managed database. Connect your IDE / SSH and run
+# `node server.js` inside it; the subdomain exposes whatever you start.
+
+project:
+  name: tinbase-benchmark-cde
+  corePackage: LIGHT
+  tags:
+    - tinbase
+    - benchmark
+    - supabase
+    - remote-cde
+  envSecrets:
+    TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
+
+services:
+  - hostname: db
+    type: postgresql:single@17
+    priority: 10
+    profile: oltp-hobby
+
+  - hostname: app
+    type: nodejs@22
+    priority: 5
+    buildFromGit: https://github.com/fxck/tinbase-benchmark
+    zeropsSetup: appdev
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 1

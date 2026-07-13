@@ -2,7 +2,7 @@
   "name": "tinbase-benchmark",
   "version": "1.0.0",
   "private": true,
-  "description": "Live benchmark dashboard for tinbase (Supabase-compatible in-process Postgres) with embedded Studio.",
+  "description": "Benchmark app that uses @supabase/supabase-js against tinbase (Supabase-compatible, Postgres in-process), with embedded Studio.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,8 +11,9 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
     "express": "^4.21.2",
     "http-proxy-middleware": "^3.0.3",
-    "tinbase": "latest"
+    "tinbase": "0.10.0"
   }
 }

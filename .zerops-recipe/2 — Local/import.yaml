@@ -1,0 +1,22 @@
+#zeropsPreprocessor=on
+
+# Local — the managed database only, no app container. Run the benchmark on your
+# own machine against it over the Zerops VPN (`zcli vpn up`), then set DATABASE_URL
+# to the db's superuser connection and `npm install && node server.js`.
+
+project:
+  name: tinbase-benchmark-local
+  corePackage: LIGHT
+  tags:
+    - tinbase
+    - benchmark
+    - supabase
+    - local
+  envSecrets:
+    TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
+
+services:
+  - hostname: db
+    type: postgresql:single@17
+    priority: 10
+    profile: oltp-hobby

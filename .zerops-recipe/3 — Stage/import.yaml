@@ -1,0 +1,30 @@
+#zeropsPreprocessor=on
+
+# Stage — one always-on app container (zeropsSetup: app) plus a single-node managed
+# Postgres. Durable and subdomain-exposed; a single container is plenty for staging.
+
+project:
+  name: tinbase-benchmark-stage
+  corePackage: LIGHT
+  tags:
+    - tinbase
+    - benchmark
+    - supabase
+    - stage
+  envSecrets:
+    TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
+
+services:
+  - hostname: db
+    type: postgresql:single@17
+    priority: 10
+    profile: oltp-staging
+
+  - hostname: app
+    type: nodejs@22
+    priority: 5
+    buildFromGit: https://github.com/fxck/tinbase-benchmark
+    zeropsSetup: app
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 1

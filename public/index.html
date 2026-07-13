@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>tinbase · benchmark</title>
+  <title>tinbase · supabase-js benchmark</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
   <link rel="stylesheet" href="/assets/style.css" />
 </head>
@@ -12,8 +12,8 @@
     <div class="brand">
       <span class="logo">⚡</span>
       <div>
-        <h1>tinbase <span class="thin">benchmark</span></h1>
-        <p class="sub">Supabase-compatible Postgres, in one process — hammered over its REST API.</p>
+        <h1>tinbase <span class="thin">× supabase-js benchmark</span></h1>
+        <p class="sub">tinbase is the backend. Every workload runs through the unmodified <code>@supabase/supabase-js</code> SDK.</p>
       </div>
     </div>
     <div class="topbar-right">
@@ -42,16 +42,24 @@
       </div>
     </section>
 
-    <section class="stats">
-      <div class="stat stat-hero">
-        <div class="stat-label">Throughput</div>
-        <div class="stat-value"><span id="tp">–</span> <span class="unit">ops/sec</span></div>
-      </div>
-      <div class="stat"><div class="stat-label">p50 latency</div><div class="stat-value"><span id="p50">–</span> <span class="unit">ms</span></div></div>
-      <div class="stat"><div class="stat-label">p95 latency</div><div class="stat-value"><span id="p95">–</span> <span class="unit">ms</span></div></div>
-      <div class="stat"><div class="stat-label">p99 latency</div><div class="stat-value"><span id="p99">–</span> <span class="unit">ms</span></div></div>
-      <div class="stat"><div class="stat-label">Max latency</div><div class="stat-value"><span id="pmax">–</span> <span class="unit">ms</span></div></div>
-    </section>
+    <div class="split">
+      <section class="stats">
+        <div class="stat stat-hero">
+          <div class="stat-label">Throughput</div>
+          <div class="stat-value"><span id="tp">–</span> <span class="unit">ops/sec</span></div>
+        </div>
+        <div class="stat"><div class="stat-label">p50 latency</div><div class="stat-value"><span id="p50">–</span> <span class="unit">ms</span></div></div>
+        <div class="stat"><div class="stat-label">p95 latency</div><div class="stat-value"><span id="p95">–</span> <span class="unit">ms</span></div></div>
+        <div class="stat"><div class="stat-label">p99 latency</div><div class="stat-value"><span id="p99">–</span> <span class="unit">ms</span></div></div>
+        <div class="stat"><div class="stat-label">Max latency</div><div class="stat-value"><span id="pmax">–</span> <span class="unit">ms</span></div></div>
+      </section>
+
+      <section class="panel sdk-panel">
+        <div class="sdk-head"><h2>The call being benchmarked</h2><span class="tag" id="engineTag">–</span></div>
+        <pre class="snippet snippet-lg"><code id="snippet">// pick a workload…</code></pre>
+        <p class="muted small">Same SDK you'd use against hosted Supabase — <code>createClient(url, key)</code>, pointed at tinbase.</p>
+      </section>
+    </div>
 
     <section class="panel chart-panel">
       <div class="chart-head">
@@ -59,7 +67,7 @@
         <div class="progress-wrap"><div id="progressBar" class="progress"></div></div>
         <span id="progressText" class="mono muted">idle</span>
       </div>
-      <canvas id="chart" height="260"></canvas>
+      <canvas id="chart" height="240"></canvas>
     </section>
 
     <div class="two-col">
@@ -72,21 +80,21 @@
       </section>
 
       <section class="panel">
-        <h2>Connection</h2>
-        <p class="muted">The dashboard, the REST API and the Studio all share this origin.</p>
-        <div class="kv"><span>REST base</span><code id="restBase" class="copy">/rest/v1</code></div>
-        <div class="kv"><span>Studio</span><code class="copy">/_/</code></div>
-        <div class="kv"><span>anon key</span><code id="anonKey" class="copy trunc">–</code></div>
-        <pre class="snippet"><code>curl "$ORIGIN/rest/v1/bench?select=*&limit=5" \
-  -H "apikey: $ANON_KEY"</code></pre>
+        <div class="sdk-head"><h2>Browser → supabase-js → tinbase</h2><span class="pill pill-wait" id="browserPill">…</span></div>
+        <p class="muted small">This panel runs <code>supabase-js</code> <em>in your browser</em> against the same origin, proving client-side compatibility:</p>
+        <pre class="snippet"><code>const supabase = createClient(location.origin, ANON_KEY)
+const { data } = await supabase
+  .from('bench').select('*').limit(3)</code></pre>
+        <div id="browserResult" class="browser-result muted small">waiting for tinbase…</div>
       </section>
     </div>
   </main>
 
   <footer>
-    <span>Running on <a href="https://zerops.io" target="_blank" rel="noopener">Zerops</a> · powered by <a href="https://www.tinbase.dev" target="_blank" rel="noopener">tinbase</a></span>
+    <span>Running on <a href="https://zerops.io" target="_blank" rel="noopener">Zerops</a> · backend by <a href="https://www.tinbase.dev" target="_blank" rel="noopener">tinbase</a> · SDK <a href="https://github.com/supabase/supabase-js" target="_blank" rel="noopener">@supabase/supabase-js</a></span>
   </footer>
 
+  <script src="/vendor/supabase.js"></script>
   <script src="/assets/app.js"></script>
 </body>
 </html>

@@ -19,12 +19,18 @@ const el = {
   progressBar: $('progressBar'),
   progressText: $('progressText'),
   runsBody: $('runsBody'),
-  anonKey: $('anonKey'),
+  snippet: $('snippet'),
+  engineTag: $('engineTag'),
+  browserPill: $('browserPill'),
+  browserResult: $('browserResult'),
   chart: $('chart'),
 };
 
 let running = false;
-const series = []; // {t: seconds, v: ops/sec}
+let anonKey = null;
+let browserDemoDone = false;
+const snippets = {};
+const series = [];
 
 // ---------------------------------------------------------------------------
 // tiny canvas line chart (no dependencies)
@@ -32,7 +38,7 @@ const series = []; // {t: seconds, v: ops/sec}
 function drawChart() {
   const c = el.chart;
   const dpr = window.devicePixelRatio || 1;
-  const w = c.clientWidth, h = 260;
+  const w = c.clientWidth, h = 240;
   if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
   const ctx = c.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -62,7 +68,6 @@ function drawChart() {
   const x = (t) => padL + (t / maxT) * plotW;
   const y = (v) => padT + (1 - v / maxV) * plotH;
 
-  // area fill
   const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
   grad.addColorStop(0, 'rgba(61,220,151,0.28)');
   grad.addColorStop(1, 'rgba(61,220,151,0.02)');
@@ -73,7 +78,6 @@ function drawChart() {
   ctx.lineTo(x(series[0].t), padT + plotH);
   ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
 
-  // line
   ctx.beginPath();
   ctx.moveTo(x(series[0].t), y(series[0].v));
   for (const p of series) ctx.lineTo(x(p.t), y(p.v));
@@ -82,22 +86,30 @@ function drawChart() {
 window.addEventListener('resize', drawChart);
 
 // ---------------------------------------------------------------------------
-// status polling
+// status polling + SDK snippet
 // ---------------------------------------------------------------------------
+function showSnippet(key) {
+  if (snippets[key]) el.snippet.textContent = snippets[key];
+}
+
 async function pollStatus() {
   try {
     const s = await fetch('/api/status').then((r) => r.json());
     if (el.workload.options.length === 0 && s.workloads) {
-      for (const [k, label] of Object.entries(s.workloads)) {
+      for (const [k, v] of Object.entries(s.workloads)) {
+        snippets[k] = v.snippet;
         const o = document.createElement('option');
-        o.value = k; o.textContent = label; el.workload.appendChild(o);
+        o.value = k; o.textContent = v.label; el.workload.appendChild(o);
       }
+      showSnippet(el.workload.value);
     }
-    if (s.anonKey) { el.anonKey.textContent = s.anonKey; el.anonKey.title = s.anonKey; }
+    if (s.engine) el.engineTag.textContent = s.engine;
+    if (s.anonKey) anonKey = s.anonKey;
     if (s.tbReady) {
       setStatus('ok', 'ready');
       el.runBtn.disabled = running;
       el.resetBtn.disabled = running;
+      if (!browserDemoDone) runBrowserDemo();
       return;
     }
     setStatus('wait', 'booting tinbase…');
@@ -112,7 +124,33 @@ function setStatus(kind, text) {
 }
 
 // ---------------------------------------------------------------------------
-// run
+// browser-side supabase-js demo — the SAME SDK, client-side, against tinbase
+// ---------------------------------------------------------------------------
+async function runBrowserDemo() {
+  browserDemoDone = true;
+  try {
+    if (!window.supabase || !anonKey) throw new Error('SDK not loaded');
+    const client = window.supabase.createClient(location.origin, anonKey);
+    const { data, error } = await client.from('bench').select('*').limit(3);
+    if (error) throw error;
+    el.browserPill.className = 'pill pill-ok';
+    el.browserPill.textContent = 'live ✓';
+    el.browserResult.classList.remove('muted');
+    el.browserResult.innerHTML =
+      `<span class="ok-text">✓ browser talked to tinbase via supabase-js</span>` +
+      `<pre class="snippet mini">${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+  } catch (e) {
+    el.browserPill.className = 'pill pill-err';
+    el.browserPill.textContent = 'failed';
+    el.browserResult.textContent = 'browser SDK error: ' + (e.message || e);
+  }
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+}
+
+// ---------------------------------------------------------------------------
+// benchmark run (server-side, through supabase-js) over SSE
 // ---------------------------------------------------------------------------
 function run() {
   if (running) return;
@@ -128,8 +166,10 @@ function run() {
   const es = new EventSource(`/api/run?workload=${workload}&total=${total}&concurrency=${concurrency}`);
 
   es.addEventListener('start', (e) => {
+    const d = JSON.parse(e.data);
+    if (d.snippet) el.snippet.textContent = d.snippet;
     setStatus('run', 'running');
-    el.progressText.textContent = `0 / ${fmt(JSON.parse(e.data).total)}`;
+    el.progressText.textContent = `0 / ${fmt(d.total)}`;
   });
   es.addEventListener('prepare', (e) => {
     const d = JSON.parse(e.data);
@@ -160,7 +200,7 @@ function run() {
     try { el.progressText.textContent = 'error: ' + JSON.parse(e.data).message; } catch (_) {}
     finish(es);
   });
-  es.onerror = () => finish(es); // stream closed
+  es.onerror = () => finish(es);
 }
 
 function finish(es) {
@@ -184,6 +224,7 @@ function addRun(d) {
 // ---------------------------------------------------------------------------
 // wiring
 // ---------------------------------------------------------------------------
+el.workload.addEventListener('change', () => showSnippet(el.workload.value));
 el.concurrency.addEventListener('input', () => (el.concVal.textContent = el.concurrency.value));
 el.runBtn.addEventListener('click', run);
 el.resetBtn.addEventListener('click', async () => {
@@ -192,13 +233,6 @@ el.resetBtn.addEventListener('click', async () => {
   el.progressText.textContent = 'table reset';
   el.resetBtn.disabled = false;
 });
-document.querySelectorAll('.copy').forEach((n) =>
-  n.addEventListener('click', () => {
-    navigator.clipboard?.writeText(n.title || n.textContent).catch(() => {});
-    const prev = n.textContent; n.textContent = 'copied!';
-    setTimeout(() => (n.textContent = prev), 900);
-  })
-);
 
 drawChart();
 pollStatus();
