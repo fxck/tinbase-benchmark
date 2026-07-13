@@ -1,7 +1,7 @@
 #zeropsPreprocessor=on
 
-# Stage — one always-on app container (zeropsSetup: app) plus a single-node managed
-# Postgres. Durable and subdomain-exposed; a single container is plenty for staging.
+# Stage — the full three-service stack at single-node scale: managed Postgres, one
+# tinbase backend, one dashboard. Durable and subdomain-exposed.
 
 project:
   name: tinbase-benchmark-stage
@@ -15,11 +15,20 @@ services:
     priority: 10
     profile: oltp-staging
 
-  - hostname: app
+  - hostname: tinbase
+    type: nodejs@22
+    priority: 8
+    buildFromGit: https://github.com/fxck/tinbase-zerops
+    zeropsSetup: tinbase
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 1
+
+  - hostname: dashboard
     type: nodejs@22
     priority: 5
     buildFromGit: https://github.com/fxck/tinbase-benchmark
-    zeropsSetup: app
+    zeropsSetup: dashboard
     enableSubdomainAccess: true
     minContainers: 1
     maxContainers: 1

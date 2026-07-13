@@ -81,8 +81,8 @@
 
       <section class="panel">
         <div class="sdk-head"><h2>Browser → supabase-js → tinbase</h2><span class="pill pill-wait" id="browserPill">…</span></div>
-        <p class="muted small">This panel runs <code>supabase-js</code> <em>in your browser</em> against the same origin, proving client-side compatibility:</p>
-        <pre class="snippet"><code>const supabase = createClient(location.origin, ANON_KEY)
+        <p class="muted small">This panel runs <code>supabase-js</code> <em>in your browser</em>, cross-origin against the tinbase service, proving client-side compatibility:</p>
+        <pre class="snippet"><code>const supabase = createClient(TINBASE_URL, ANON_KEY)
 const { data } = await supabase
   .from('bench').select('*').limit(3)</code></pre>
         <div id="browserResult" class="browser-result muted small">waiting for tinbase…</div>

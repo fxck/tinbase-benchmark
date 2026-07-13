@@ -1,6 +1,7 @@
 <!-- #ZEROPS_EXTRACT_START:intro# -->
-A dev + stage pair for agent-driven development, both backed by one managed
-Postgres. The dev container boots with the source + node_modules ready and idles on
-`zsc noop` for an agent / developer to adopt and drive via the Zerops dev server;
-the stage container runs the real app as a live reference. Single-node stores.
+The tinbase backend + managed Postgres, plus a dev/stage pair of the benchmark
+dashboard for agent-driven development. tinbase runs as a stable service (it's the
+product, not what you edit); the agent adopts the dev dashboard container (idles on
+`zsc noop`) and drives it via the Zerops dev server, with the stage dashboard as a
+running reference.
 <!-- #ZEROPS_EXTRACT_END:intro# -->

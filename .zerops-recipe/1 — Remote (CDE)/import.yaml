@@ -1,8 +1,8 @@
 #zeropsPreprocessor=on
 
-# Remote CDE — one dev container (zeropsSetup: appdev deploys the tree and idles on
-# `zsc noop`) plus the managed database. Connect your IDE / SSH and run
-# `node server.js` inside it; the subdomain exposes whatever you start.
+# Remote CDE — the tinbase backend + managed Postgres, plus one dev container for the
+# dashboard (zeropsSetup: dashboarddev, idles on `zsc noop`). Connect your IDE / SSH
+# to `dashboard` and run `node server.js` against the already-running tinbase.
 
 project:
   name: tinbase-benchmark-cde
@@ -16,11 +16,20 @@ services:
     priority: 10
     profile: oltp-hobby
 
-  - hostname: app
+  - hostname: tinbase
+    type: nodejs@22
+    priority: 8
+    buildFromGit: https://github.com/fxck/tinbase-zerops
+    zeropsSetup: tinbase
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 1
+
+  - hostname: dashboard
     type: nodejs@22
     priority: 5
     buildFromGit: https://github.com/fxck/tinbase-benchmark
-    zeropsSetup: appdev
+    zeropsSetup: dashboarddev
     enableSubdomainAccess: true
     minContainers: 1
     maxContainers: 1

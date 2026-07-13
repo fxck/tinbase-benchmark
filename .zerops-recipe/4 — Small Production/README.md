@@ -1,6 +1,6 @@
 <!-- #ZEROPS_EXTRACT_START:intro# -->
-One strong app container on a dedicated (SERIOUS) core with a public subdomain,
-plus a single-node managed Postgres. Vertical autoscaling to 16 GB / 8 vCPU. The
-cost-effective production option when one container is enough; step up to HA
-Production for redundancy and horizontal scale.
+The three-service stack on a dedicated (SERIOUS) core: one tinbase and one dashboard
+container, each vertically autoscaled, plus a single-node managed Postgres with
+public subdomains. The cost-effective production option; step up to HA Production
+for redundancy and horizontal scale.
 <!-- #ZEROPS_EXTRACT_END:intro# -->

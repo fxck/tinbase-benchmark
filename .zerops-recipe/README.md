@@ -6,14 +6,14 @@ See the [root README](../README.md) · backend: **[tinbase.dev](https://www.tinb
 
 - **Name:** <!-- #ZEROPS_EXTRACT_START:name# -->tinbase benchmark<!-- #ZEROPS_EXTRACT_END:name# -->
 - **Shape:** <!-- #ZEROPS_EXTRACT_START:shape# -->app<!-- #ZEROPS_EXTRACT_END:shape# --> — you fork and deploy your own copy
-- **Environments:** `AI Agent` · `Remote (CDE)` · `Local` · `Stage` · `Small Production` · `HA Production` — the full dev-lifecycle ladder, from an agent-driven dev/stage pair up to a horizontally-scaled HA cluster
+- **Environments:** `AI Agent` · `Remote (CDE)` · `Local` · `Stage` · `Small Production` · `HA Production`
 
 ## Tagline
 
 <!-- #ZEROPS_EXTRACT_START:intro# -->
-tinbase gives you the Supabase API — REST, Auth, Storage, Studio — on top of a
-Postgres you already run. This recipe points it at a managed Zerops PostgreSQL and
-benchmarks it through the unmodified @supabase/supabase-js SDK, live in the browser.
+Three services: the tinbase backend, a managed Postgres under it, and a dashboard
+that benchmarks tinbase through the unmodified @supabase/supabase-js SDK — live in
+the browser. tinbase and the benchmark are separate services, wired over Zerops.
 <!-- #ZEROPS_EXTRACT_END:intro# -->
 
 ## Overview
@@ -21,59 +21,59 @@ benchmarks it through the unmodified @supabase/supabase-js SDK, live in the brow
 <!-- #ZEROPS_EXTRACT_START:description# -->
 [tinbase](https://www.tinbase.dev) is a Supabase-compatible backend — PostgREST,
 GoTrue auth, Storage, Realtime and a Studio dashboard — that speaks the same wire
-protocol as hosted Supabase, so the official `@supabase/supabase-js` SDK talks to
-it unchanged. As of 0.10 it can run against **an external Postgres you already
-run** (`--database-url`) instead of an embedded engine. This recipe wires it to a
-**managed Zerops PostgreSQL** service, so your data is durable, backed-up and
-scalable — while tinbase supplies the Supabase-shaped API and Studio on top.
+protocol as hosted Supabase, so `@supabase/supabase-js` talks to it unchanged. As of
+0.10 it runs against an external Postgres (`--database-url`). This recipe wires it
+to a **managed Zerops PostgreSQL**, so the data is durable and managed while tinbase
+supplies the Supabase-shaped API and Studio.
 
-The app is a live benchmark. A Node process boots tinbase against the managed `db`,
-reverse-proxies the Supabase API + Studio through one public URL, and drives three
-workloads — bulk insert, point-select by id, and an indexed filtered query —
-**through supabase-js**, streaming throughput and p50/p95/p99 latency to a
-dependency-free canvas dashboard over SSE. A side panel runs supabase-js *in the
-browser* against the same origin, proving client-side compatibility too.
+Crucially, the pieces are kept as **separate services**, the way you'd actually run
+them:
 
-Because the data lives in the managed database, the tinbase container is
-effectively stateless — which is why this recipe ships the whole ladder, including
-a horizontally-scaled **HA Production** tier (many app containers, one HA Postgres)
-that an in-process database could never support.
+- **`tinbase`** — the real backend, deployed as its own service (from the
+  [tinbase-zerops](https://github.com/fxck/tinbase-zerops) repo), bound to `db`,
+  with REST + Studio on its own subdomain.
+- **`db`** — the managed PostgreSQL the backend runs against.
+- **`dashboard`** — our benchmark *client* (this repo). It doesn't embed or proxy
+  tinbase; it drives it through supabase-js: server-side over the internal network
+  (`http://tinbase:3000`) and, in a live panel, from the browser against tinbase's
+  public subdomain. It mints the anon / service_role keys from the shared
+  `TINBASE_JWT_SECRET`, so it needs no tinbase dependency of its own.
+
+Three workloads — bulk insert, point-select by id, and an indexed filtered query —
+each a real `supabase.from(...).insert()/.select()` call, stream throughput and
+p50/p95/p99 latency to a canvas dashboard over SSE. Because tinbase is stateless
+(its data is in `db`), both runtime services scale horizontally — see the HA tier.
 <!-- #ZEROPS_EXTRACT_END:description# -->
 
 ## Features
 
 <!-- #ZEROPS_EXTRACT_START:features# -->
-- **Supabase API over a managed database** — tinbase serves REST/Auth/Storage/Studio on top of a durable, backed-up Zerops PostgreSQL, not an ephemeral in-process engine.
-- **Unmodified supabase-js** — every benchmark workload is a real `supabase.from(...).insert()/.select()` call; the exact SDK you'd use against hosted Supabase.
-- **Runs in the browser too** — a panel drives `supabase-js` client-side against the same origin, proving end-to-end wire compatibility.
-- **Live throughput + real percentiles** — ops/sec sampled every 150 ms on a canvas chart; p50/p95/p99/max reported per run, not just an average.
-- **Three workloads** — bulk insert, point-select by id, and an indexed filtered query, each exercising a different path through PostgREST → Postgres.
-- **Studio in the box** — the Supabase-style dashboard is proxied at `/_/` for table editing, SQL, and live logs against the managed db.
-- **Stateless app tier** — state lives in the managed database, so the runtime scales horizontally; the HA tier proves it.
-- **One repo, one click** — a single Node service + a managed Postgres deploy as a complete project from this recipe.
+- **Real separation of concerns** — tinbase (the product) and the benchmark (our client) are distinct services, not one process; wired over Zerops' internal network.
+- **Supabase API over a managed database** — durable, backed-up Postgres; tinbase is the API layer, not the store.
+- **Unmodified supabase-js** — every workload is a real `supabase.from(...).insert()/.select()` call, server-side and in the browser (cross-origin, CORS-clean).
+- **Keys minted from a shared secret** — the dashboard derives the anon / service_role JWTs from `TINBASE_JWT_SECRET`; no tinbase dependency in the client.
+- **Live throughput + real percentiles** — canvas chart sampled every 150 ms; p50/p95/p99/max per run.
+- **Studio on its own subdomain** — tinbase's dashboard for table editing, SQL, and live logs against the managed db.
+- **Horizontally scalable** — tinbase holds no state, so the HA tier runs many backend + dashboard containers over one HA Postgres.
+- **One recipe, three services** — `db` + `tinbase` (from tinbase-zerops) + `dashboard` (this repo), deployed together.
 <!-- #ZEROPS_EXTRACT_END:features# -->
 
 ## First-run setup
 
 <!-- #ZEROPS_EXTRACT_START:takeover-guide# -->
-**Nothing to configure — just open the app.** The public URL is the `app`
-service's subdomain (or attach your own domain in Project → Public Access). The
-dashboard, the REST API, and the Studio all share that one origin. Pick a workload,
-set operations + concurrency, and hit **Run benchmark**.
+**Open the dashboard.** Its subdomain is the benchmark UI. Pick a workload, set
+operations + concurrency, hit **Run benchmark**. **Open Studio ↗** links to
+tinbase's own subdomain (`/_/`).
 
-**Secrets are generated for you.** `TINBASE_JWT_SECRET` is created once as a
-**project** secret (`<@generateRandomString(<48>)>`) so every app container agrees
-on the anon / service_role keys — important for the multi-container HA tier. The
-managed database credentials are wired automatically.
+**Secrets and wiring are automatic.** `TINBASE_JWT_SECRET` is generated once as a
+**project** variable, shared by `tinbase` (which signs the keys) and `dashboard`
+(which mints matching keys). `DATABASE_URL` for tinbase is built from the managed
+db's superuser credentials. The dashboard finds tinbase at `http://tinbase:3000`
+(internal) and `${tinbase_zeropsSubdomain}` (browser).
 
-**tinbase connects to the managed db as the superuser.** `DATABASE_URL` in
-`zerops.yaml` is built from `${db_superUser}` / `${db_superUserPassword}` — tinbase
-bootstraps the `anon`, `authenticated` and `service_role` roles on first start,
-which needs `CREATEROLE`. The regular database user is not privileged enough; this
-is expected for a Supabase-shaped role model.
-
-**Open Studio to inspect data.** Click **Open Studio ↗** (or visit `/_/`) to browse
-the `bench` table, run SQL, and watch live logs — all against the managed Postgres.
+**tinbase connects to `db` as the superuser** — it bootstraps the `anon` /
+`authenticated` / `service_role` roles on first start, which needs `CREATEROLE`.
+This is expected for a Supabase-shaped role model.
 <!-- #ZEROPS_EXTRACT_END:takeover-guide# -->
 
 ## Knowledge base
@@ -82,46 +82,50 @@ the `bench` table, run SQL, and watch live logs — all against the managed Post
 ### Architecture
 
 ```
-@supabase/supabase-js  →  tinbase (REST/Auth/Storage/Studio)  →  managed Zerops PostgreSQL (db)
+                         @supabase/supabase-js
+                          (server + browser)
+                                  │
+   dashboard ───────────────────►│
+   (this repo)   http://tinbase:3000  /  ${tinbase_zeropsSubdomain}
+                                  ▼
+                              tinbase ──► db  (managed PostgreSQL)
+                     (tinbase-zerops repo, --database-url)
 ```
 
-- **app** (Node, Ubuntu runtime) — spawns `tinbase start --database-url $DATABASE_URL`
-  on `127.0.0.1:54321`, reverse-proxies every non-app path (`/_/`, `/rest`, `/auth`,
-  `/storage`, `/realtime`, …) to it, and runs the benchmark engine: a worker pool
-  that drives the loopback REST API through supabase-js, times each request, and
-  streams progress over SSE.
-- **db** (managed `postgresql`) — the real database. tinbase reads
-  `supabase/migrations/*.sql` on start (the `bench` table + `reset_bench()` RPC)
-  and applies them idempotently, exactly like the Supabase CLI. Data is durable
-  across redeploys and container cycles.
+- **tinbase** builds from [tinbase-zerops](https://github.com/fxck/tinbase-zerops)
+  (`zeropsSetup: tinbase`) and runs `tinbase start --host 0.0.0.0 --port 3000`,
+  reading `DATABASE_URL`. It applies `supabase/migrations/*.sql` idempotently.
+- **dashboard** builds from this repo (`zeropsSetup: dashboard`) and benchmarks
+  tinbase through supabase-js. Keys are minted locally from `TINBASE_JWT_SECRET`.
+- **db** is the managed PostgreSQL; only `tinbase` connects to it.
 
-### Why the superuser connection
+### Why tinbase needs the superuser, and why keys are shared
 
-tinbase creates the PostgREST role model (`anon`, `authenticated`, `service_role`)
-on the target database. Creating roles needs the `CREATEROLE` attribute, which the
-default Zerops database user lacks — so `DATABASE_URL` uses `${db_superUser}`. On a
-regular user tinbase fails at startup with `permission denied to create role`.
+tinbase creates the PostgREST role model on the target database, which needs
+`CREATEROLE` — so `DATABASE_URL` uses `${db_superUser}`. The anon / service_role
+keys are HMAC-signed Supabase JWTs derived from `TINBASE_JWT_SECRET`; the dashboard
+mints them from the same project-level secret, so it never has to call tinbase to
+fetch keys. Every container that signs or mints keys must share that secret →
+project scope.
 
-### Scaling — and why an HA tier now exists
+### Scaling
 
-With state in the managed database, the tinbase container holds no durable data, so
-it scales horizontally: the **HA Production** tier runs multiple `app` containers
-against one HA Postgres. tinbase's bootstrap is idempotent and "never assumes an
-empty or exclusive DB", so concurrent containers share the database safely for
-REST / Auth / Storage. (Realtime CDC fan-out across many instances is still
-maturing upstream — the benchmark exercises REST, which is unaffected.) All
-containers must share `TINBASE_JWT_SECRET` (set at project scope) so they issue and
-accept the same keys.
+tinbase keeps no state (it's in `db`), so both runtime services scale horizontally.
+The **HA Production** tier runs 2–4 `tinbase` and 2–4 `dashboard` containers behind
+the Zerops L7 balancer over one HA Postgres; `http://tinbase:3000` load-balances
+across the tinbase containers via internal DNS. (Realtime CDC fan-out across many
+tinbase instances is still maturing upstream; the benchmark exercises REST.)
 
 ### Environment variables
 
-- `TINBASE_JWT_SECRET` (project secret, auto-generated) — signs the anon / service_role JWTs; shared by every app container.
-- `DATABASE_URL` (wired in `zerops.yaml`) — `postgresql://${db_superUser}:${db_superUserPassword}@${db_hostname}:${db_port}/${db_dbName}`.
-- `PORT` (automatic) — public HTTP port; the app binds `0.0.0.0:3000`.
+- `TINBASE_JWT_SECRET` (project, auto-generated) — shared signing secret.
+- `DATABASE_URL` (tinbase, wired) — `postgresql://${db_superUser}:${db_superUserPassword}@${db_hostname}:${db_port}/${db_dbName}`.
+- `TINBASE_INTERNAL_URL` (dashboard) — `http://tinbase:3000`.
+- `TINBASE_PUBLIC_URL` (dashboard) — `${tinbase_zeropsSubdomain}` (browser demo + Studio link).
 
 ### Troubleshooting
 
-- **`permission denied to create role` in logs** — `DATABASE_URL` is using a non-superuser. Use `${db_superUser}` / `${db_superUserPassword}`.
-- **Dashboard stuck on "booting tinbase…"** — check the app logs for the `[tinbase] connecting to external postgres at db:5432/db` line; if absent, `DATABASE_URL` is unset or the `db` service isn't reachable yet (it has `priority: 10` so it starts first).
-- **Write throughput looks modest** — each op is a full PostgREST → Postgres round-trip through supabase-js; raise concurrency to push it. Read workloads (point-select, filter) are much faster.
+- **Dashboard stuck on "booting tinbase…"** — it can't reach the tinbase service; check that `tinbase` is deployed and healthy and that `TINBASE_INTERNAL_URL` is `http://tinbase:3000`.
+- **`permission denied to create role` in tinbase logs** — `DATABASE_URL` isn't the superuser.
+- **Browser panel fails but server-side works** — the browser hits tinbase's public subdomain cross-origin; ensure `tinbase` has subdomain access enabled (the recipe sets it).
 <!-- #ZEROPS_EXTRACT_END:knowledge-base# -->

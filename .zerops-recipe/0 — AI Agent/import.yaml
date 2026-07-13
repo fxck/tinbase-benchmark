@@ -1,16 +1,16 @@
 #zeropsPreprocessor=on
 
-# AI Agent — a dev + stage pair for agent-driven development, both backed by one
-# managed Postgres. The dev half deploys the whole tree and idles on `zsc noop`
-# (zeropsSetup: appdev) so an agent can adopt it and drive `node server.js` via the
-# Zerops dev server; the stage half runs the real app (zeropsSetup: app) as a
-# running reference. Both share the `db` service and the project TINBASE_JWT_SECRET.
+# AI Agent — the tinbase backend + a managed Postgres, plus a dev/stage pair of the
+# benchmark dashboard for agent-driven development. tinbase runs as a stable service
+# (it's the product, not what you edit); the agent adopts the dashboarddev container
+# (idles on `zsc noop`) and drives it via the Zerops dev server, with dashboardstage
+# as a running reference.
 
 project:
   name: tinbase-benchmark-agent
   corePackage: LIGHT
   envVariables:
-    # shared by every app container so they agree on the anon / service_role keys
+    # shared signing secret: tinbase signs the keys, the dashboards mint matching ones
     TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
 
 services:
@@ -19,20 +19,29 @@ services:
     priority: 10
     profile: oltp-hobby
 
-  - hostname: appdev
+  - hostname: tinbase
     type: nodejs@22
-    priority: 5
-    buildFromGit: https://github.com/fxck/tinbase-benchmark
-    zeropsSetup: appdev
+    priority: 8
+    buildFromGit: https://github.com/fxck/tinbase-zerops
+    zeropsSetup: tinbase
     enableSubdomainAccess: true
     minContainers: 1
     maxContainers: 1
 
-  - hostname: appstage
+  - hostname: dashboarddev
     type: nodejs@22
     priority: 5
     buildFromGit: https://github.com/fxck/tinbase-benchmark
-    zeropsSetup: app
+    zeropsSetup: dashboarddev
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 1
+
+  - hostname: dashboardstage
+    type: nodejs@22
+    priority: 5
+    buildFromGit: https://github.com/fxck/tinbase-benchmark
+    zeropsSetup: dashboard
     enableSubdomainAccess: true
     minContainers: 1
     maxContainers: 1

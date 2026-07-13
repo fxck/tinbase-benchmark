@@ -23,11 +23,13 @@ const el = {
   engineTag: $('engineTag'),
   browserPill: $('browserPill'),
   browserResult: $('browserResult'),
+  studioLink: $('studioLink'),
   chart: $('chart'),
 };
 
 let running = false;
 let anonKey = null;
+let tinbaseUrl = null;
 let browserDemoDone = false;
 const snippets = {};
 const series = [];
@@ -105,6 +107,8 @@ async function pollStatus() {
     }
     if (s.engine) el.engineTag.textContent = s.engine;
     if (s.anonKey) anonKey = s.anonKey;
+    if (s.tinbaseUrl) tinbaseUrl = s.tinbaseUrl;
+    if (s.studioUrl && el.studioLink) el.studioLink.href = s.studioUrl;
     if (s.tbReady) {
       setStatus('ok', 'ready');
       el.runBtn.disabled = running;
@@ -129,8 +133,8 @@ function setStatus(kind, text) {
 async function runBrowserDemo() {
   browserDemoDone = true;
   try {
-    if (!window.supabase || !anonKey) throw new Error('SDK not loaded');
-    const client = window.supabase.createClient(location.origin, anonKey);
+    if (!window.supabase || !anonKey || !tinbaseUrl) throw new Error('SDK not loaded');
+    const client = window.supabase.createClient(tinbaseUrl, anonKey);
     const { data, error } = await client.from('bench').select('*').limit(3);
     if (error) throw error;
     el.browserPill.className = 'pill pill-ok';

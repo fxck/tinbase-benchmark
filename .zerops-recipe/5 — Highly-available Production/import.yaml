@@ -1,9 +1,9 @@
 #zeropsPreprocessor=on
 
-# Highly-available Production — multiple stateless app containers behind the Zerops
-# L7 balancer, all sharing one HA (3-node) managed Postgres. Possible only because
-# tinbase keeps its state in the managed db, not in-process. Every app container
-# shares TINBASE_JWT_SECRET (project scope) so they issue and accept the same keys.
+# Highly-available Production — 2–4 tinbase and 2–4 dashboard containers behind the
+# Zerops L7 balancer, over one HA (3-node) managed Postgres. Possible because tinbase
+# is stateless (its data lives in db); http://tinbase:3000 load-balances across the
+# tinbase containers via internal DNS. Every container shares TINBASE_JWT_SECRET.
 
 project:
   name: tinbase-benchmark-ha
@@ -17,14 +17,26 @@ services:
     priority: 10
     profile: oltp-production
 
-  - hostname: app
+  - hostname: tinbase
     type: nodejs@22
-    priority: 5
-    buildFromGit: https://github.com/fxck/tinbase-benchmark
-    zeropsSetup: app
+    priority: 8
+    buildFromGit: https://github.com/fxck/tinbase-zerops
+    zeropsSetup: tinbase
     enableSubdomainAccess: true
     minContainers: 2
     maxContainers: 4
     verticalAutoscaling:
       minRam: 1
       maxRam: 16
+
+  - hostname: dashboard
+    type: nodejs@22
+    priority: 5
+    buildFromGit: https://github.com/fxck/tinbase-benchmark
+    zeropsSetup: dashboard
+    enableSubdomainAccess: true
+    minContainers: 2
+    maxContainers: 4
+    verticalAutoscaling:
+      minRam: 1
+      maxRam: 8

@@ -1,6 +1,6 @@
 <!-- #ZEROPS_EXTRACT_START:intro# -->
-Backing store only — a managed Postgres you develop against from your laptop. Bring
-the VPN up (`zcli vpn up`), point `DATABASE_URL` at the db's superuser connection,
-and run `node server.js` locally. tinbase + the dashboard run on your machine; the
-database is real and in the cloud.
+Managed database only — run both tinbase and the dashboard on your laptop against
+it over the Zerops VPN (`zcli vpn up`). Point tinbase's DATABASE_URL at db's
+superuser connection, run the dashboard at TINBASE_INTERNAL_URL=http://localhost:54321.
+Nothing but the durable database lives in the cloud.
 <!-- #ZEROPS_EXTRACT_END:intro# -->

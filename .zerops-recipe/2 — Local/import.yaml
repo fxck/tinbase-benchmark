@@ -1,8 +1,9 @@
 #zeropsPreprocessor=on
 
-# Local — the managed database only, no app container. Run the benchmark on your
-# own machine against it over the Zerops VPN (`zcli vpn up`), then set DATABASE_URL
-# to the db's superuser connection and `npm install && node server.js`.
+# Local — the managed database only. Run BOTH the tinbase backend and the dashboard
+# on your own machine against it over the Zerops VPN (`zcli vpn up`): start tinbase
+# with DATABASE_URL pointed at db's superuser connection, then run the dashboard
+# with TINBASE_INTERNAL_URL=http://localhost:54321.
 
 project:
   name: tinbase-benchmark-local

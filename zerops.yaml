@@ -1,9 +1,8 @@
 zerops:
-  # Production / always-on setup. tinbase runs against the managed `db` service
-  # via DATABASE_URL (superuser — tinbase creates the anon/authenticated/
-  # service_role roles, which needs CREATEROLE). Ubuntu runtime for parity with
-  # the verified environment.
-  - setup: app
+  # The benchmark dashboard — a pure client of the `tinbase` service. It does not
+  # touch the database directly; it talks to tinbase over the internal network and
+  # (in the browser) at tinbase's public subdomain.
+  - setup: dashboard
     build:
       base: nodejs@22
       buildCommands:
@@ -14,24 +13,23 @@ zerops:
         - node_modules
     run:
       base: nodejs@22
-      os: ubuntu
       ports:
         - port: 3000
           httpSupport: true
       envVariables:
         NODE_ENV: production
-        # Superuser connection — required for tinbase's role bootstrap.
-        DATABASE_URL: postgresql://${db_superUser}:${db_superUserPassword}@${db_hostname}:${db_port}/${db_dbName}
+        # internal DNS to the tinbase service (server-side benchmark)
+        TINBASE_INTERNAL_URL: http://tinbase:3000
+        # tinbase's public URL (browser-side supabase-js demo + Studio link)
+        TINBASE_PUBLIC_URL: ${tinbase_zeropsSubdomain}
       start: node server.js
       healthCheck:
         httpGet:
           port: 3000
           path: /health
 
-  # Dev setup — deploys the whole tree and idles on `zsc noop` so an agent / IDE
-  # can adopt the container and drive `node server.js` via the Zerops dev server.
-  # Used by the "AI Agent" and "Remote (CDE)" recipe environments.
-  - setup: appdev
+  # Dev setup — idles on `zsc noop` for agent / IDE adoption (AI Agent, Remote CDE).
+  - setup: dashboarddev
     build:
       base: nodejs@22
       buildCommands:
@@ -42,11 +40,11 @@ zerops:
         - node_modules
     run:
       base: nodejs@22
-      os: ubuntu
       ports:
         - port: 3000
           httpSupport: true
       envVariables:
         NODE_ENV: development
-        DATABASE_URL: postgresql://${db_superUser}:${db_superUserPassword}@${db_hostname}:${db_port}/${db_dbName}
+        TINBASE_INTERNAL_URL: http://tinbase:3000
+        TINBASE_PUBLIC_URL: ${tinbase_zeropsSubdomain}
       start: zsc noop --silent

@@ -1,8 +1,8 @@
 #zeropsPreprocessor=on
 
-# Small Production — a single strong app container on a SERIOUS core with a public
-# subdomain, plus a single-node managed Postgres. The app scales vertically here;
-# for horizontal scale + a resilient database use the HA Production tier.
+# Small Production — the three-service stack on a SERIOUS core: one tinbase and one
+# dashboard container, each vertically autoscaled, plus a single-node managed
+# Postgres. For horizontal scale + a resilient database use the HA Production tier.
 
 project:
   name: tinbase-benchmark-prod
@@ -16,16 +16,26 @@ services:
     priority: 10
     profile: oltp-staging
 
-  - hostname: app
+  - hostname: tinbase
     type: nodejs@22
-    priority: 5
-    buildFromGit: https://github.com/fxck/tinbase-benchmark
-    zeropsSetup: app
+    priority: 8
+    buildFromGit: https://github.com/fxck/tinbase-zerops
+    zeropsSetup: tinbase
     enableSubdomainAccess: true
     minContainers: 1
     maxContainers: 1
     verticalAutoscaling:
       minRam: 1
       maxRam: 16
-      minCpu: 1
-      maxCpu: 8
+
+  - hostname: dashboard
+    type: nodejs@22
+    priority: 5
+    buildFromGit: https://github.com/fxck/tinbase-benchmark
+    zeropsSetup: dashboard
+    enableSubdomainAccess: true
+    minContainers: 1
+    maxContainers: 1
+    verticalAutoscaling:
+      minRam: 1
+      maxRam: 8
