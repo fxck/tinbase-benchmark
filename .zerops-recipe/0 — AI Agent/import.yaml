@@ -9,12 +9,7 @@
 project:
   name: tinbase-benchmark-agent
   corePackage: LIGHT
-  tags:
-    - tinbase
-    - benchmark
-    - supabase
-    - ai-agent
-  envSecrets:
+  envVariables:
     # shared by every app container so they agree on the anon / service_role keys
     TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
 

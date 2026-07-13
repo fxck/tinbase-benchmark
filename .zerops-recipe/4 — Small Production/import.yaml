@@ -7,12 +7,7 @@
 project:
   name: tinbase-benchmark-prod
   corePackage: SERIOUS
-  tags:
-    - tinbase
-    - benchmark
-    - supabase
-    - production
-  envSecrets:
+  envVariables:
     TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
 
 services:

@@ -7,12 +7,7 @@
 project:
   name: tinbase-benchmark-local
   corePackage: LIGHT
-  tags:
-    - tinbase
-    - benchmark
-    - supabase
-    - local
-  envSecrets:
+  envVariables:
     TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
 
 services:

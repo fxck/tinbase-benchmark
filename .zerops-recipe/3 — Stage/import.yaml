@@ -6,12 +6,7 @@
 project:
   name: tinbase-benchmark-stage
   corePackage: LIGHT
-  tags:
-    - tinbase
-    - benchmark
-    - supabase
-    - stage
-  envSecrets:
+  envVariables:
     TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
 
 services:

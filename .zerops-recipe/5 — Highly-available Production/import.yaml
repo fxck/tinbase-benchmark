@@ -8,12 +8,7 @@
 project:
   name: tinbase-benchmark-ha
   corePackage: SERIOUS
-  tags:
-    - tinbase
-    - benchmark
-    - supabase
-    - ha-production
-  envSecrets:
+  envVariables:
     TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
 
 services:

@@ -7,12 +7,7 @@
 project:
   name: tinbase-benchmark-cde
   corePackage: LIGHT
-  tags:
-    - tinbase
-    - benchmark
-    - supabase
-    - remote-cde
-  envSecrets:
+  envVariables:
     TINBASE_JWT_SECRET: <@generateRandomString(<48>)>
 
 services:
